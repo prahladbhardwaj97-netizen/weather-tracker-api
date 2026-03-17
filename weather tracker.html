@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Weather Tracker</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Poppins', Arial, Helvetica, sans-serif;
+}
+
+body{
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:linear-gradient(135deg,#667eea 0%, #764ba2 100%);
+    padding:20px;
+}
+
+.container{
+    width:400px;
+    background:rgba(255,255,255,0.95);
+    backdrop-filter:blur(10px);
+    padding:35px;
+    border-radius:24px;
+    text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,0.3);
+    transition:transform 0.3s ease;
+}
+
+.container:hover{
+    transform:translateY(-5px);
+}
+
+h1{
+    margin-bottom:25px;
+    color:#333;
+    font-size:28px;
+}
+
+.search{
+    display:flex;
+    gap:10px;
+    margin-bottom:25px;
+}
+
+input{
+    flex:1;
+    padding:14px 18px;
+    border-radius:12px;
+    border:2px solid #e0e0e0;
+    font-size:15px;
+    outline:none;
+    transition:border-color 0.3s, box-shadow 0.3s;
+}
+
+input:focus{
+    border-color:#667eea;
+    box-shadow:0 0 0 3px rgba(102,126,234,0.2);
+}
+
+button{
+    padding:14px 24px;
+    border:none;
+    border-radius:12px;
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    color:white;
+    cursor:pointer;
+    font-weight:600;
+    transition:transform 0.2s, box-shadow 0.2s;
+}
+
+button:hover{
+    transform:scale(1.05);
+    box-shadow:0 5px 20px rgba(102,126,234,0.4);
+}
+
+button:disabled{
+    opacity:0.6;
+    cursor:not-allowed;
+    transform:none;
+}
+
+.card{
+    margin-top:20px;
+    padding:20px;
+    background:linear-gradient(135deg,#f5f7fa 0%, #c3cfe2 100%);
+    border-radius:16px;
+}
+
+.weather-icon{
+    font-size:80px;
+    margin:10px 0;
+    animation:bounce 2s infinite;
+}
+
+@keyframes bounce{
+    0%, 100%{transform:translateY(0);}
+    50%{transform:translateY(-10px);}
+}
+
+.card h2{
+    color:#333;
+    font-size:24px;
+    margin-bottom:5px;
+}
+
+.card p{
+    margin:8px 0;
+    font-size:15px;
+    color:#555;
+}
+
+.temp{
+    font-size:48px;
+    font-weight:bold;
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+}
+
+.desc{
+    text-transform:capitalize;
+    font-weight:500;
+}
+
+.details{
+    display:flex;
+    justify-content:space-around;
+    margin-top:15px;
+    padding-top:15px;
+    border-top:1px solid rgba(0,0,0,0.1);
+}
+
+.details div{
+    text-align:center;
+}
+
+.details span{
+    display:block;
+    font-size:24px;
+    margin-bottom:5px;
+}
+
+.error{
+    color:#e74c3c;
+    margin-top:15px;
+    font-weight:500;
+    min-height:24px;
+}
+
+.loading{
+    display:inline-block;
+    width:20px;
+    height:20px;
+    border:3px solid rgba(255,255,255,0.3);
+    border-radius:50%;
+    border-top-color:#fff;
+    animation:spin 1s ease-in-out infinite;
+    vertical-align:middle;
+    margin-right:8px;
+}
+
+@keyframes spin{
+    to{transform:rotate(360deg);}
+}
+
+.hidden{
+    display:none;
+}
+
+.suggestions{
+    position:absolute;
+    background:white;
+    border-radius:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.2);
+    max-height:200px;
+    overflow-y:auto;
+    width:calc(100% - 100px);
+    margin-top:5px;
+    z-index:1000;
+    display:none;
+}
+
+.suggestions div{
+    padding:12px 18px;
+    cursor:pointer;
+    transition:background 0.2s;
+    text-align:left;
+}
+
+.suggestions div:hover{
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    color:white;
+}
+
+.search-wrapper{
+    position:relative;
+    flex:1;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>🌤 AI Weather Tracker</h1>
+
+    <div class="search">
+        <div class="search-wrapper">
+            <input id="cityInput" placeholder="Enter city name..." autocomplete="off" />
+            <div class="suggestions" id="suggestions"></div>
+        </div>
+        <button id="btn">Search</button>
+    </div>
+
+    <div class="card" id="weatherCard">
+        <div class="weather-icon" id="weatherIcon">🌤️</div>
+        <h2 id="city">--</h2>
+        <p class="temp" id="temp">--°C</p>
+        <p class="desc" id="desc">Condition: --</p>
+        
+        <div class="details">
+            <div>
+                <span>💧</span>
+                <p id="humidity">--%</p>
+                <small>Humidity</small>
+            </div>
+            <div>
+                <span>💨</span>
+                <p id="wind">-- km/h</p>
+                <small>Wind</small>
+            </div>
+            <div>
+                <span>🌡️</span>
+                <p id="feels">--°C</p>
+                <small>Feels Like</small>
+            </div>
+        </div>
+    </div>
+
+    <p class="error" id="error"></p>
+</div>
+
+<script>
+// 🌟 AI-Powered Weather Tracker with Enhanced Features
+
+// Get weather icons based on condition code
+function getWeatherIcon(code){
+    if(code >= 200 && code < 300) return '⛈️';
+    if(code >= 300 && code < 400) return '🌧️';
+    if(code >= 500 && code < 600) return '🌧️';
+    if(code >= 600 && code < 700) return '❄️';
+    if(code >= 700 && code < 800) return '🌫️';
+    if(code === 800) return '☀️';
+    if(code > 800 && code < 900) return '☁️';
+    return '🌤️';
+}
+
+// Popular cities for suggestions (AI-simulated autocomplete)
+const popularCities = [
+    "New York", "Palwal", "Tokyo", "Paris", "Sydney", 
+    "Dubai", "Singapore", "Tamil Naidu", "Mumbai", "Berlin",
+    "Toronto", "Moscow", "Seoul", "Bangkok", "Istanbul",
+    "Los Angeles", "Chicago", "Beijing", "Delhi", "Cairo"
+];
+
+// DOM Elements
+const cityInput = document.getElementById("cityInput");
+const btn = document.getElementById("btn");
+const suggestions = document.getElementById("suggestions");
+
+const city = document.getElementById("city");
+const temp = document.getElementById("temp");
+const desc = document.getElementById("desc");
+const humidity = document.getElementById("humidity");
+const wind = document.getElementById("wind");
+const feels = document.getElementById("feels");
+const error = document.getElementById("error");
+const weatherIcon = document.getElementById("weatherIcon");
+const weatherCard = document.getElementById("weatherCard");
+
+// City name to coordinates mapping
+const cityCoords = {
+    "new york": {lat: 40.7128, lon: -74.0060},
+    "london": {lat: 51.5074, lon: -0.1278},
+    "tokyo": {lat: 35.6762, lon: 139.6503},
+    "paris": {lat: 48.8566, lon: 2.3522},
+    "sydney": {lat: -33.8688, lon: 151.2093},
+    "dubai": {lat: 25.2048, lon: 55.2708},
+    "singapore": {lat: 1.3521, lon: 103.8198},
+    "hong kong": {lat: 22.3193, lon: 114.1694},
+    "mumbai": {lat: 19.0760, lon: 72.8777},
+    "berlin": {lat: 52.5200, lon: 13.4050},
+    "toronto": {lat: 43.6532, lon: -79.3832},
+    "moscow": {lat: 55.7558, lon: 37.6173},
+    "seoul": {lat: 37.5665, lon: 126.9780},
+    "bangkok": {lat: 13.7563, lon: 100.5018},
+    "istanbul": {lat: 41.0082, lon: 28.9784},
+    "los angeles": {lat: 34.0522, lon: -118.2437},
+    "chicago": {lat: 41.8781, lon: -87.6298},
+    "beijing": {lat: 39.9042, lon: 116.4074},
+    "delhi": {lat: 28.7041, lon: 77.1025},
+    "cairo": {lat: 30.0444, lon: 31.2357}
+};
+
+// Show loading state
+function showLoading(){
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading"></span>Loading...';
+}
+
+// Hide loading state
+function hideLoading(){
+    btn.disabled = false;
+    btn.innerHTML = 'Search';
+}
+
+// AI-powered city suggestions
+cityInput.addEventListener("input", (e) => {
+    const value = e.target.value.toLowerCase();
+    suggestions.innerHTML = "";
+    
+    if(value.length < 2){
+        suggestions.style.display = "none";
+        return;
+    }
+    
+    const matches = popularCities.filter(city => 
+        city.toLowerCase().startsWith(value)
+    );
+    
+    if(matches.length > 0){
+        matches.forEach(match => {
+            const div = document.createElement("div");
+            div.textContent = match;
+            div.addEventListener("click", () => {
+                cityInput.value = match;
+                suggestions.style.display = "none";
+                getWeather(match);
+            });
+            suggestions.appendChild(div);
+        });
+        suggestions.style.display = "block";
+    } else {
+        suggestions.style.display = "none";
+    }
+});
+
+// Hide suggestions when clicking outside
+document.addEventListener("click", (e) => {
+    if(!e.target.closest(".search-wrapper")){
+        suggestions.style.display = "none";
+    }
+});
+
+// Get weather data from Open-Meteo API (FREE - no API key needed)
+async function getWeather(cityName){
+    if(!cityName.trim()){
+        error.textContent = "Please enter a city name";
+        return;
+    }
+    
+    const cityKey = cityName.toLowerCase().trim();
+    const coords = cityCoords[cityKey];
+    
+    if(!coords){
+        error.textContent = "City not found in database. Try one of: London, New York, Tokyo, Paris, etc.";
+        weatherIcon.textContent = "❌";
+        hideLoading();
+        return;
+    }
+    
+    showLoading();
+    error.textContent = "";
+    
+    // Reset display
+    city.textContent = "--";
+    temp.textContent = "--°C";
+    desc.textContent = "Condition: --";
+    humidity.textContent = "--%";
+    wind.textContent = "-- km/h";
+    feels.textContent = "--°C";
+    weatherIcon.textContent = "🌤️";
+    
+    try{
+        // Using Open-Meteo API - FREE, no API key required
+        const res = await fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m`
+        );
+
+        if(!res.ok) throw new Error("Weather data unavailable");
+
+        const data = await res.json();
+        
+        // Map weather codes to descriptions and icons
+        const weatherCode = data.current.weather_code;
+        const weatherInfo = getWeatherInfo(weatherCode);
+        
+        // Update UI with weather data
+        city.textContent = cityName;
+        temp.textContent = Math.round(data.current.temperature_2m) + "°C";
+        desc.textContent = "Condition: " + weatherInfo.description;
+        humidity.textContent = data.current.relative_humidity_2m + "%";
+        wind.textContent = data.current.wind_speed_10m + " km/h";
+        feels.textContent = Math.round(data.current.apparent_temperature) + "°C";
+        
+        // Get appropriate weather icon
+        weatherIcon.textContent = weatherInfo.icon;
+        
+    }catch(err){
+        error.textContent = err.message;
+        weatherIcon.textContent = "❌";
+    }finally{
+        hideLoading();
+    }
+}
+
+// Get weather description and icon from weather code (WMO codes)
+function getWeatherInfo(code){
+    const weatherMap = {
+        0: {description: "Clear sky", icon: "☀️"},
+        1: {description: "Mainly clear", icon: "🌤️"},
+        2: {description: "Partly cloudy", icon: "⛅"},
+        3: {description: "Overcast", icon: "☁️"},
+        45: {description: "Foggy", icon: "🌫️"},
+        48: {description: "Depositing rime fog", icon: "🌫️"},
+        51: {description: "Light drizzle", icon: "🌧️"},
+        53: {description: "Moderate drizzle", icon: "🌧️"},
+        55: {description: "Dense drizzle", icon: "🌧️"},
+        61: {description: "Slight rain", icon: "🌧️"},
+        63: {description: "Moderate rain", icon: "🌧️"},
+        65: {description: "Heavy rain", icon: "🌧️"},
+        71: {description: "Slight snow", icon: "❄️"},
+        73: {description: "Moderate snow", icon: "❄️"},
+        75: {description: "Heavy snow", icon: "❄️"},
+        77: {description: "Snow grains", icon: "❄️"},
+        80: {description: "Slight rain showers", icon: "🌦️"},
+        81: {description: "Moderate rain showers", icon: "🌦️"},
+        82: {description: "Violent rain showers", icon: "🌦️"},
+        85: {description: "Slight snow showers", icon: "🌨️"},
+        86: {description: "Heavy snow showers", icon: "🌨️"},
+        95: {description: "Thunderstorm", icon: "⛈️"},
+        96: {description: "Thunderstorm with slight hail", icon: "⛈️"},
+        99: {description: "Thunderstorm with heavy hail", icon: "⛈️"}
+    };
+    
+    return weatherMap[code] || {description: "Unknown", icon: "🌤️"};
+}
+
+// Event Listeners
+btn.addEventListener("click", () => {
+    if(cityInput.value.trim() !== ""){
+        getWeather(cityInput.value.trim());
+    }
+});
+
+cityInput.addEventListener("keypress", (e) => {
+    if(e.key === "Enter"){
+        getWeather(cityInput.value.trim());
+    }
+});
+
+// Set default city on load
+getWeather("London");
+</script>
+
+</body>
+</html>
